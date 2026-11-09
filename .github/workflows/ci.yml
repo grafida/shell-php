@@ -26,3 +26,19 @@ jobs:
       - run: composer install --no-interaction --no-progress
       - run: composer test
       - run: composer linter:check
+
+  # The vendored conformance fixtures must be byte-identical to grafida/shell's at the commit
+  # protocol/FIXTURES_REF names (refresh them with scripts/sync-fixtures.sh, never by hand).
+  fixtures:
+    name: Fixtures match grafida/shell
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - id: ref
+        run: echo "sha=$(cat protocol/FIXTURES_REF)" >> "$GITHUB_OUTPUT"
+      - uses: actions/checkout@v4
+        with:
+          repository: grafida/shell
+          ref: ${{ steps.ref.outputs.sha }}
+          path: upstream-shell
+      - run: diff -r upstream-shell/protocol/fixtures protocol/fixtures

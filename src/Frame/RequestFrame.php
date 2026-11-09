@@ -1,0 +1,23 @@
+<?php
+
+/**
+ * Grafida Shell — PHP worker runtime.
+ *
+ * @copyright Copyright (c) 2026 Nicholas K. Dionysopoulos
+ * @license   MIT; see LICENSE
+ */
+
+declare(strict_types=1);
+
+namespace Grafida\Shell\Frame;
+
+use Grafida\Shell\Request;
+
+/** `request`: shell → worker (protocol/v1.md §3.2). The body travels inside the {@see Request}. */
+final readonly class RequestFrame implements Message
+{
+    public function __construct(
+        public int $id,
+        public Request $request,
+    ) {}
+}

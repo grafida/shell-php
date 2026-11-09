@@ -1,0 +1,15 @@
+# Conformance fixtures are byte-exact: never let git rewrite line endings in them.
+protocol/fixtures/*.bin -text -diff
+protocol/fixtures/*.json -text
+protocol/fixtures/SHA256SUMS -text
+
+# Kept out of the Composer dist. protocol/ (the conformance fixtures) and resources/ (shell.js) DO
+# ship: applications run the fixtures against their own worker via Grafida\Shell\Testing.
+/.github            export-ignore
+/tests              export-ignore
+/scripts            export-ignore
+/phpunit.xml.dist   export-ignore
+/phpstan.neon.dist  export-ignore
+/CLAUDE.md          export-ignore
+/.gitattributes     export-ignore
+/.gitignore         export-ignore
