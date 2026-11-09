@@ -142,4 +142,21 @@ final class WorkerProcessTest extends TestCase
         self::assertSame(Worker::EXIT_PROTOCOL, $worker->wait());
         self::assertStringContainsString('[protocol-error] body_too_large', $worker->stderr());
     }
+
+    public function testTheShellsBodyLimitWinsOverTheAppsOwn(): void
+    {
+        // The app asks for 1 MiB; the shell's manifest says 2048 bytes, and the shell is right.
+        $env    = getenv() + [Worker::BODY_LIMIT_ENV => '2048'];
+        $worker = new WorkerProcess(
+            [\PHP_BINARY, '-d', 'display_errors=1', __DIR__ . '/Fixtures/echo-worker.php', (string) (1 << 20)],
+            null,
+            $env,
+        );
+
+        self::assertSame(200, $worker->request(new Request('POST', 'boson://app/', [], str_repeat('x', 2048)))->status);
+
+        $worker->send(new \Grafida\Shell\Frame\RequestFrame(99, new Request('POST', 'boson://app/', [], str_repeat('x', 2049))));
+        self::assertSame(Worker::EXIT_PROTOCOL, $worker->wait());
+        self::assertStringContainsString('[protocol-error] body_too_large', $worker->stderr());
+    }
 }

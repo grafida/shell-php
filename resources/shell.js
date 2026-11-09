@@ -8,9 +8,13 @@
  * worker. This file is the page's side of that contract (grafida/grafida#82, "Native endpoints").
  * It is a classic script that defines `globalThis.GrafidaShell`. Serve it as a static asset.
  *
- * STATUS: contract only. The endpoints arrive with the shell in Phase 2. Under any other host (Boson
- * today, or a plain browser) `available()` resolves false, and every other call rejects with a
- * `ShellUnavailableError`, so callers can fall back to their existing code path.
+ * Under any other host (Boson, a plain browser) `available()` resolves false and every other call
+ * rejects with a `ShellUnavailableError`, so callers can fall back to their existing code path.
+ * Under the shell, a refused call (an unknown token, a dialog already open) rejects with a
+ * `ShellError` carrying the shell's error code: the shell is there, it just said no.
+ *
+ * `available()` asks once per page and remembers the answer, so calling it before every dialog
+ * costs nothing after the first time.
  *
  * Files are referred to by opaque per-session **tokens**, never by paths. To hand a picked file to
  * the app, send its token in the `X-Shell-File` request header. The shell strips any incoming
@@ -22,7 +26,7 @@
 
     var BASE = '/_native/';
 
-    /** The page is not hosted by the shell, or the shell refused the call. */
+    /** The page is not hosted by the shell. */
     class ShellUnavailableError extends Error {
         constructor(message, status) {
             super(message);
@@ -30,6 +34,19 @@
             this.status = status || 0;
         }
     }
+
+    /** The shell answered, and refused: `code` is its error code, e.g. `dialog_busy`. */
+    class ShellError extends Error {
+        constructor(code, status, detail) {
+            super('Shell error: ' + code + (detail ? ' (' + detail + ')' : ''));
+            this.name = 'ShellError';
+            this.code = code;
+            this.status = status;
+            this.detail = detail || null;
+        }
+    }
+
+    var availability = null;
 
     function isJson(response) {
         return (response.headers.get('content-type') || '').indexOf('application/json') === 0;
@@ -53,15 +70,22 @@
         }
 
         // Any other host answers these paths with its own page or a 404, not with our JSON.
-        if (!response.ok || !isJson(response)) {
+        if (!isJson(response)) {
             throw new ShellUnavailableError('Native endpoint ' + endpoint + ' unavailable', response.status);
         }
 
-        return response.json();
+        var json = await response.json();
+
+        if (!response.ok) {
+            throw new ShellError(String(json && json.error || 'error'), response.status, json && json.detail);
+        }
+
+        return json;
     }
 
     var api = {
         ShellUnavailableError: ShellUnavailableError,
+        ShellError: ShellError,
 
         /** Request header carrying a file token to the app. */
         FILE_HEADER: 'X-Shell-File',
@@ -74,14 +98,20 @@
             return call('GET', 'info');
         },
 
-        /** Whether the page is hosted by the native shell. Never rejects. */
-        available: async function () {
-            try {
-                var info = await call('GET', 'info');
-                return typeof info === 'object' && info !== null && typeof info.protocol === 'number';
-            } catch (e) {
-                return false;
+        /** Whether the page is hosted by the native shell. Asked once per page; never rejects. */
+        available: function () {
+            if (availability === null) {
+                availability = call('GET', 'info').then(
+                    function (info) {
+                        return typeof info === 'object' && info !== null && typeof info.protocol === 'number';
+                    },
+                    function () {
+                        return false;
+                    }
+                );
             }
+
+            return availability;
         },
 
         /**

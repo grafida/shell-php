@@ -182,4 +182,27 @@ final class WorkerTest extends TestCase
 
         self::assertSame(Worker::EXIT_IO, Worker::serve(new EchoHandler(), new WorkerOptions(), $in, $out, $err));
     }
+    public function testTheShellsBodyLimitIsTakenWhenValid(): void
+    {
+        $app = new WorkerOptions('app', '1.0', 1 << 20);
+
+        $taken = Worker::withShellBodyLimit($app, '2048');
+        self::assertSame(2048, $taken->maxBodyBytes);
+        self::assertSame('app', $taken->app);
+        self::assertSame('1.0', $taken->version);
+        self::assertSame(9007199254740991, Worker::withShellBodyLimit($app, '9007199254740991')->maxBodyBytes);
+
+        self::assertSame($app, Worker::withShellBodyLimit($app, false));
+        self::assertSame($app, Worker::withShellBodyLimit($app, ''));
+
+        $err = fopen('php://memory', 'w+b');
+        \assert($err !== false);
+
+        foreach (['0', '-1', '1e6', '12abc', ' 2048', '9007199254740992', '99999999999999999999'] as $bad) {
+            self::assertSame($app, Worker::withShellBodyLimit($app, $bad, $err), $bad);
+        }
+
+        rewind($err);
+        self::assertStringContainsString('ignoring SHELL_MAX_BODY_BYTES=1e6', (string) stream_get_contents($err));
+    }
 }

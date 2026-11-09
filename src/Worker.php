@@ -39,8 +39,39 @@ final class Worker
     public const int EXIT_PROTOCOL = 65; // EX_DATAERR
     public const int EXIT_IO       = 74; // EX_IOERR
 
+    /**
+     * The environment variable through which the shell passes its body limit (the manifest's
+     * `worker.maxBodyBytes`). Protocol v1 §2 requires both sides to use the same limit, and the
+     * manifest is the one place it is configured, so this wins over {@see WorkerOptions::$maxBodyBytes}.
+     */
+    public const string BODY_LIMIT_ENV = 'SHELL_MAX_BODY_BYTES';
+
     private function __construct()
     {
+    }
+
+    /**
+     * `$options` with the shell's body limit applied, when `$value` (the environment variable's
+     * value, or false when unset) is a valid one: an integer in 1 … 2^53 − 1. An invalid value is
+     * reported to `$error` and ignored.
+     *
+     * @param resource|null $error
+     */
+    public static function withShellBodyLimit(WorkerOptions $options, string|false $value, $error = null): WorkerOptions
+    {
+        if ($value === false || $value === '') {
+            return $options;
+        }
+
+        if (!ctype_digit($value) || \strlen($value) > 16 || (int) $value < 1 || (int) $value > Protocol::MAX_INT) {
+            if ($error !== null) {
+                fwrite($error, sprintf("[worker] ignoring %s=%s: not an integer in 1 … 2^53 − 1\n", self::BODY_LIMIT_ENV, $value));
+            }
+
+            return $options;
+        }
+
+        return new WorkerOptions($options->app, $options->version, (int) $value);
     }
 
     /**
@@ -60,6 +91,8 @@ final class Worker
         while (ob_get_level() > 0) {
             self::stray($stderr, (string) ob_get_clean());
         }
+
+        $options = self::withShellBodyLimit($options, getenv(self::BODY_LIMIT_ENV), $stderr);
 
         $stdin  = fopen('php://stdin', 'rb');
         $stdout = fopen('php://stdout', 'wb');

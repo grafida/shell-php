@@ -40,6 +40,17 @@ package is the PHP half of that contract. Grafida is consumer #1; the package mu
   `WorkerProcessTest::testNothingAnAppPrintsReachesTheFrameStream` is the proof; remove the buffer
   and it fails with `bad_magic`. Exit status: 0 (EOF/`shutdown`), 65 (protocol/session error),
   74 (stdout gone). A handler that throws is a `500`, never an exit.
+- **The body limit belongs to the shell.** `Worker::run()` applies `SHELL_MAX_BODY_BYTES` (the shell's
+  manifest `worker.maxBodyBytes`) over `WorkerOptions::$maxBodyBytes`, because protocol v1 §2 requires
+  both sides to agree and the manifest is the one place it is configured. An invalid value is logged
+  and ignored (`Worker::withShellBodyLimit()`).
+- **`resources/shell.js` distinguishes "not the shell" from "the shell said no".** Anything that is
+  not a JSON answer (Boson's SPA page, a browser's 404) is a `ShellUnavailableError`, so callers fall
+  back to their old path; a JSON error from the shell is a `ShellError` carrying its code
+  (`dialog_busy`, `unknown_file_token`, `unsupported_url`, …), which callers must *not* treat as a
+  reason to fall back. `available()` memoises one `GET _native/info` per page. It has no JS test
+  suite of its own: it is exercised inside the real shell (grafida/shell's automation channel) and
+  in Grafida's SPA.
 - `Worker::serve()` is the loop on any three streams (tests drive it on `php://memory`);
   `Worker::run()` is `serve()` on stdio plus the ini settings and `exit()`.
 - No runtime dependencies. The worker runs on a static phpmicro SFX, so every extension or package

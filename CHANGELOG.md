@@ -1,3 +1,8 @@
+shell-php 0.2.0
+================================================================================
++ `shell.js` works with the real shell: refusals reject with a `ShellError` and its code; `available()` asks once
++ The worker takes its body limit from the shell (`SHELL_MAX_BODY_BYTES`), so the app's manifest is the one place to set it
+
 shell-php 0.1.0
 ================================================================================
 + Repository skeleton: protocol identity, CI, licence
