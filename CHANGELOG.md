@@ -1,4 +1,4 @@
-shell-php 0.1 (unreleased)
+shell-php 0.1.0
 ================================================================================
 + Repository skeleton: protocol identity, CI, licence
 + `Request`, `Response`, `Headers` (repeated headers kept end to end) and the `Handler` interface
