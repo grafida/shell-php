@@ -48,7 +48,9 @@ package is the PHP half of that contract. Grafida is consumer #1; the package mu
   not a JSON answer (Boson's SPA page, a browser's 404) is a `ShellUnavailableError`, so callers fall
   back to their old path; a JSON error from the shell is a `ShellError` carrying its code
   (`dialog_busy`, `unknown_file_token`, `unsupported_url`, …), which callers must *not* treat as a
-  reason to fall back. `available()` memoises one `GET _native/info` per page. It has no JS test
+  reason to fall back. `available()` memoises one `GET _native/info` per page. `clipboardHeaders()` has the shell put the OS
+  clipboard's text in a request's body (`X-Shell-Clipboard`), and `onDrop()` receives the files the
+  shell took from a drop on the window, as tokens with the drop point (`shell:drop`). It has no JS test
   suite of its own: it is exercised inside the real shell (grafida/shell's automation channel) and
   in Grafida's SPA.
 - `Worker::serve()` is the loop on any three streams (tests drive it on `php://memory`);

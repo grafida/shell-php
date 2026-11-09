@@ -1,6 +1,7 @@
 shell-php 0.2.0
 ================================================================================
 + `shell.js` works with the real shell: refusals reject with a `ShellError` and its code; `available()` asks once
++ `shell.js`: `clipboardHeaders()` has the shell read the clipboard for a request; `onDrop()` receives dropped files
 + The worker takes its body limit from the shell (`SHELL_MAX_BODY_BYTES`), so the app's manifest is the one place to set it
 
 shell-php 0.1.0

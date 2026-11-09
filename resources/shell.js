@@ -90,6 +90,9 @@
         /** Request header carrying a file token to the app. */
         FILE_HEADER: 'X-Shell-File',
 
+        /** Request header asking the shell to put the clipboard's text in the request body. */
+        CLIPBOARD_HEADER: 'X-Shell-Clipboard',
+
         /**
          * `GET _native/info` → `{shell, protocol, platform, arch, webview}`.
          * @returns {Promise<{shell: string, protocol: number, platform: string, arch: string, webview: string}>}
@@ -175,6 +178,35 @@
             var headers = {};
             headers['X-Shell-File'] = token;
             return headers;
+        },
+
+        /**
+         * `fetch()` init headers that have the shell read the OS clipboard for this request: the shell
+         * replaces the body with the clipboard's text (empty when it holds none) and forwards
+         * `X-Shell-Clipboard: text`, so the app reads it from the body. The shell owns the window, so
+         * this needs no helper tool and shows no prompt.
+         */
+        clipboardHeaders: function () {
+            var headers = {};
+            headers['X-Shell-Clipboard'] = 'read';
+            return headers;
+        },
+
+        /**
+         * Files dropped on the window. The page's sandboxed web process cannot read them itself, so
+         * the shell takes the drop and calls `handler({files: [{token, name, size}], x, y})`, `x`/`y`
+         * being the drop point in viewport coordinates. Read each file as after a dialog, with
+         * `fileHeaders(token)`. Returns a function that removes the handler. Never fires under any
+         * other host.
+         */
+        onDrop: function (handler) {
+            var listener = function (event) {
+                handler(event.detail);
+            };
+            root.addEventListener('shell:drop', listener);
+            return function () {
+                root.removeEventListener('shell:drop', listener);
+            };
         }
     };
 
