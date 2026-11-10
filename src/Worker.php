@@ -94,7 +94,11 @@ final class Worker
 
         $options = self::withShellBodyLimit($options, getenv(self::BODY_LIMIT_ENV), $stderr);
 
-        $stdin  = fopen('php://stdin', 'rb');
+        // Windows: PHP reads a pipe that was not opened as a *blocking pipe* by polling it
+        // (PeekNamedPipe, then usleep(10), for up to 32 s at a time: main/streams/plain_wrapper.c),
+        // which kept an idle worker's process at about 0.5 % of a core. `pipe.blocking` makes it a
+        // plain blocking read() (ext/standard/php_fopen_wrapper.c). Ignored on other platforms.
+        $stdin  = fopen('php://stdin', 'rb', false, stream_context_create(['pipe' => ['blocking' => true]]));
         $stdout = fopen('php://stdout', 'wb');
 
         if ($stdin === false || $stdout === false) {

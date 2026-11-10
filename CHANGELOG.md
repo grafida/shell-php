@@ -1,3 +1,7 @@
+shell-php 0.2.1
+================================================================================
+# [MEDIUM] Windows: an idle worker no longer polls its stdin (about 0.5 % of a core): it is opened as a blocking pipe
+
 shell-php 0.2.0
 ================================================================================
 + `shell.js` works with the real shell: refusals reject with a `ShellError` and its code; `available()` asks once
