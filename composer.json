@@ -1,6 +1,6 @@
 {
     "name": "grafida/shell-php",
-    "description": "PHP worker side of the Grafida desktop shell: request/response types, the framed stdio worker loop and static-file serving.",
+    "description": "PHP worker side of Grafida Shell",
     "type": "library",
     "license": "MIT",
     "homepage": "https://github.com/grafida/shell-php",

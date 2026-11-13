@@ -1,11 +1,20 @@
-# grafida/shell-php
+# Grafida Shell – PHP Library
 
-The PHP side of the [Grafida desktop shell](https://github.com/grafida/shell). It turns a PHP
-application into the **worker process** that the native shell talks to over a framed stdio protocol.
+The PHP side of [Grafida Shell](https://github.com/grafida/shell).
 
-> **Status: Phase 1.** The value types, the frame codec, the worker loop and `StaticFiles` are
-> complete and tested against the protocol's conformance fixtures. The shell that spawns the worker
-> arrives in Phase 2 ([grafida/grafida#82](https://github.com/grafida/grafida/issues/82)).
+> [!TIP]
+> **Documentation:** the [user documentation](https://github.com/grafida/shell/blob/main/docs/user/README.md) explains how the shell, this library and the packager fit
+> together. Start with [Getting started](https://github.com/grafida/shell/blob/main/docs/user/getting-started.md); [The PHP side](https://github.com/grafida/shell/blob/main/docs/user/php-worker.md) is the full guide to
+> this library, and [The JavaScript side](https://github.com/grafida/shell/blob/main/docs/user/javascript.md) covers `shell.js`. This README is a quick reference.
+
+## What does it do
+
+It turns a PHP application into the **worker process** that the native Grafida Shell application talks to.
+
+Communication between the shell and the worker takes place over a framed `stdio` protocol. From your perspective, your
+PHP application is a CLI application responding to requests it receives over the protocol.
+
+## Example
 
 ```php
 use Grafida\Shell\{Handler, Request, Response, StaticFiles, Worker, WorkerOptions};
@@ -35,14 +44,40 @@ Worker::run(new App(new StaticFiles(__DIR__ . '/public')), new WorkerOptions(app
 | `Handler` | `__invoke(Request): Response` |
 | `Worker::run()` | the stdio loop: `ready` handshake, one request at a time, exit on EOF or `shutdown`; stdout is protected from stray output |
 | `StaticFiles` | serves files from directories or `phar://` roots; `find()` answers null on a miss |
-| `resources/shell.js` | the page-side helper for the shell's `_native/*` endpoints (contract only until Phase 2); `ShellScript::path()` finds it |
+| `resources/shell.js` | the page-side helper for the shell's `_native/*` endpoints (dialogs, clipboard, file drops, window control); `ShellScript::path()` finds it |
 | `Testing\WorkerProcess` | spawns *your* worker over real pipes for your tests; `playFixture()` runs a conformance fixture through it |
 
-The wire protocol is specified, and its conformance fixtures are kept, in
-[grafida/shell](https://github.com/grafida/shell/blob/main/protocol/v1.md). This package ships a copy
-of the fixtures in `protocol/fixtures/`, pinned to the shell commit in `protocol/FIXTURES_REF`, and its
-tests run every one of them: in process, from one-byte reads, against a pipe that never closes, and
-through a real worker process.
+## Using `shell.js` in the page
+
+`resources/shell.js` is the page-side helper for the shell's native features (file dialogs, clipboard, drag and drop,
+window control). It defines a global `GrafidaShell`. Serve it from your own origin, either from a route:
+
+```php
+if ($request->path() === '/shell.js') {
+    return ShellScript::response();
+}
+```
+
+or by copying `ShellScript::path()` into your public assets at build time, and load it with
+`<script src="/shell.js"></script>`.
+
+> [!IMPORTANT]
+> `shell.js` is not a PHP file, so a packaged app only has it if you include `vendor/grafida/shell-php/resources` in
+> `phar.include`; see [Packaging](https://github.com/grafida/shell/blob/main/docs/user/packaging.md#the-configuration-file-shell-packagejson).
+
+The helper's API, its errors, how files are passed as tokens rather than paths, and the native endpoints are in
+[The JavaScript side](https://github.com/grafida/shell/blob/main/docs/user/javascript.md).
+
+## The wire protocol
+
+The wire protocol specification and its conformance fixtures are kept in [grafida/shell](https://github.com/grafida/shell/blob/main/protocol/v1.md). 
+
+The `grafida/shell-php` project includes a copy of the fixtures in `protocol/fixtures/`, pinned to the shell commit 
+specified in `protocol/FIXTURES_REF`. The tests here run every one of them: in process, from one-byte reads, against a
+pipe that never closes, and  through a real worker process.
+
+The protocol spec and fixtures are updated by running `scripts/sync-fixtures.sh`. The script assumes the `grafida/shell`
+commit we are pulling from is checked out in a sibling directory to ours called `shell`.
 
 ## Licence
 
