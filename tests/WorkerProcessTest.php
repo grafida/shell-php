@@ -94,11 +94,11 @@ final class WorkerProcessTest extends TestCase
     {
         $worker = self::start();
 
-        $response = $worker->request(new Request('GET', 'boson://app/stray?warn=1'));
+        $response = $worker->request(new Request('GET', 'shell://app/stray?warn=1'));
         self::assertSame('ok', $response->body);
 
         // The stream is still in sync: the next request is answered normally.
-        self::assertSame(200, $worker->request(new Request('GET', 'boson://app/'))->status);
+        self::assertSame(200, $worker->request(new Request('GET', 'shell://app/'))->status);
 
         $worker->closeInput();
         self::assertSame(Worker::EXIT_OK, $worker->wait());
@@ -114,8 +114,8 @@ final class WorkerProcessTest extends TestCase
     {
         $worker = self::start();
 
-        self::assertSame(500, $worker->request(new Request('GET', 'boson://app/throw'))->status);
-        self::assertSame(200, $worker->request(new Request('GET', 'boson://app/'))->status);
+        self::assertSame(500, $worker->request(new Request('GET', 'shell://app/throw'))->status);
+        self::assertSame(200, $worker->request(new Request('GET', 'shell://app/'))->status);
         self::assertStringContainsString('[handler-error] RuntimeException: deliberate failure', $worker->stderr());
     }
 
@@ -125,7 +125,7 @@ final class WorkerProcessTest extends TestCase
         $worker = self::start();
         $body   = random_bytes(50 << 20);
 
-        $echo = json_decode($worker->request(new Request('POST', 'boson://app/upload', [], $body))->body, true);
+        $echo = json_decode($worker->request(new Request('POST', 'shell://app/upload', [], $body))->body, true);
 
         self::assertIsArray($echo);
         self::assertSame(\strlen($body), $echo['bodyLength']);
@@ -136,9 +136,9 @@ final class WorkerProcessTest extends TestCase
     {
         $worker = self::start(1024);
 
-        self::assertSame(200, $worker->request(new Request('POST', 'boson://app/', [], str_repeat('x', 1024)))->status);
+        self::assertSame(200, $worker->request(new Request('POST', 'shell://app/', [], str_repeat('x', 1024)))->status);
 
-        $worker->send(new \Grafida\Shell\Frame\RequestFrame(99, new Request('POST', 'boson://app/', [], str_repeat('x', 1025))));
+        $worker->send(new \Grafida\Shell\Frame\RequestFrame(99, new Request('POST', 'shell://app/', [], str_repeat('x', 1025))));
         self::assertSame(Worker::EXIT_PROTOCOL, $worker->wait());
         self::assertStringContainsString('[protocol-error] body_too_large', $worker->stderr());
     }
@@ -153,9 +153,9 @@ final class WorkerProcessTest extends TestCase
             $env,
         );
 
-        self::assertSame(200, $worker->request(new Request('POST', 'boson://app/', [], str_repeat('x', 2048)))->status);
+        self::assertSame(200, $worker->request(new Request('POST', 'shell://app/', [], str_repeat('x', 2048)))->status);
 
-        $worker->send(new \Grafida\Shell\Frame\RequestFrame(99, new Request('POST', 'boson://app/', [], str_repeat('x', 2049))));
+        $worker->send(new \Grafida\Shell\Frame\RequestFrame(99, new Request('POST', 'shell://app/', [], str_repeat('x', 2049))));
         self::assertSame(Worker::EXIT_PROTOCOL, $worker->wait());
         self::assertStringContainsString('[protocol-error] body_too_large', $worker->stderr());
     }

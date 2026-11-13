@@ -59,18 +59,18 @@ final class StaticFilesTest extends TestCase
 
     public function testServesFromTheFirstRootThatHasTheFile(): void
     {
-        $css = $this->files()->find(new Request('GET', 'boson://app/css/app.css'));
+        $css = $this->files()->find(new Request('GET', 'shell://app/css/app.css'));
         self::assertNotNull($css);
         self::assertSame('body{}', $css->body);
         self::assertSame('text/css; charset=utf-8', $css->header('content-type'));
 
-        self::assertSame('from first', $this->files()->find(new Request('GET', 'boson://app/shared.txt'))?->body);
-        self::assertSame('second', $this->files()->find(new Request('GET', 'boson://app/css-only-here.css?v=3'))?->body);
+        self::assertSame('from first', $this->files()->find(new Request('GET', 'shell://app/shared.txt'))?->body);
+        self::assertSame('second', $this->files()->find(new Request('GET', 'shell://app/css-only-here.css?v=3'))?->body);
     }
 
     public function testPercentEncodedPathsAreDecoded(): void
     {
-        $png = $this->files()->find(new Request('GET', 'boson://app/img/a%20b%20%E2%82%AC.png'));
+        $png = $this->files()->find(new Request('GET', 'shell://app/img/a%20b%20%E2%82%AC.png'));
 
         self::assertSame("\x89PNG", $png?->body);
         self::assertSame('image/png', $png->header('content-type'));
@@ -78,7 +78,7 @@ final class StaticFilesTest extends TestCase
 
     public function testHeadHasHeadersButNoBody(): void
     {
-        $head = $this->files()->find(new Request('HEAD', 'boson://app/css/app.css'));
+        $head = $this->files()->find(new Request('HEAD', 'shell://app/css/app.css'));
 
         self::assertSame('', $head?->body);
         self::assertSame('text/css; charset=utf-8', $head->header('content-type'));
@@ -87,16 +87,16 @@ final class StaticFilesTest extends TestCase
     /** @return iterable<string, array{string, string}> */
     public static function misses(): iterable
     {
-        yield 'absent file'          => ['GET', 'boson://app/nope.js'];
-        yield 'root'                 => ['GET', 'boson://app/'];
-        yield 'directory'            => ['GET', 'boson://app/css'];
-        yield 'directory named .css' => ['GET', 'boson://app/dir.css'];
-        yield 'POST'                 => ['POST', 'boson://app/css/app.css'];
-        yield 'dot-dot'              => ['GET', 'boson://app/../secret.txt'];
-        yield 'encoded dot-dot'      => ['GET', 'boson://app/%2e%2e/secret.txt'];
-        yield 'encoded slash dot-dot' => ['GET', 'boson://app/css%2F..%2F..%2Fsecret.txt'];
-        yield 'backslash'            => ['GET', 'boson://app/css%5C..%5C..%5Csecret.txt'];
-        yield 'NUL'                  => ['GET', 'boson://app/css/app.css%00.png'];
+        yield 'absent file'          => ['GET', 'shell://app/nope.js'];
+        yield 'root'                 => ['GET', 'shell://app/'];
+        yield 'directory'            => ['GET', 'shell://app/css'];
+        yield 'directory named .css' => ['GET', 'shell://app/dir.css'];
+        yield 'POST'                 => ['POST', 'shell://app/css/app.css'];
+        yield 'dot-dot'              => ['GET', 'shell://app/../secret.txt'];
+        yield 'encoded dot-dot'      => ['GET', 'shell://app/%2e%2e/secret.txt'];
+        yield 'encoded slash dot-dot' => ['GET', 'shell://app/css%2F..%2F..%2Fsecret.txt'];
+        yield 'backslash'            => ['GET', 'shell://app/css%5C..%5C..%5Csecret.txt'];
+        yield 'NUL'                  => ['GET', 'shell://app/css/app.css%00.png'];
     }
 
     #[DataProvider('misses')]
@@ -109,8 +109,8 @@ final class StaticFilesTest extends TestCase
     {
         $files = $this->files();
 
-        self::assertSame(404, $files(new Request('GET', 'boson://app/nope'))->status);
-        self::assertSame(200, $files(new Request('GET', 'boson://app/shared.txt'))->status);
+        self::assertSame(404, $files(new Request('GET', 'shell://app/nope'))->status);
+        self::assertSame(200, $files(new Request('GET', 'shell://app/shared.txt'))->status);
     }
 
     public function testRelativePathRules(): void

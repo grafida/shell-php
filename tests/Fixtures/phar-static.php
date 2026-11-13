@@ -26,8 +26,8 @@ function pharStaticCheck(string $tmp): string
     unset($phar);
 
     $files = new StaticFiles('phar://' . $file . '/public');
-    $hit   = $files->find(new Request('GET', 'boson://app/css/app.css'));
-    $miss  = $files->find(new Request('GET', 'boson://app/../public/css/app.css'));
+    $hit   = $files->find(new Request('GET', 'shell://app/css/app.css'));
+    $miss  = $files->find(new Request('GET', 'shell://app/../public/css/app.css'));
 
     return $hit?->body === 'from phar' && $hit->header('content-type') === 'text/css; charset=utf-8' && $miss === null
         ? 'ok'

@@ -24,7 +24,7 @@ final readonly class Request
 
     /**
      * @param string                                                                     $method the HTTP method, case preserved
-     * @param string                                                                     $url    the absolute URL, e.g. `boson://app/api/sites?x=1`
+     * @param string                                                                     $url    the absolute URL, e.g. `shell://app/api/sites?x=1`
      * @param Headers|iterable<array-key, string|\Stringable|iterable<string|\Stringable>> $headers
      */
     public function __construct(

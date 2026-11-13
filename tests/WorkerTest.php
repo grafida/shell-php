@@ -64,7 +64,7 @@ final class WorkerTest extends TestCase
 
     private static function request(int $id, string $path, string $method = 'GET', string $body = ''): RequestFrame
     {
-        return new RequestFrame($id, new Request($method, 'boson://app' . $path, ['x-multi' => ['a', 'b']], $body));
+        return new RequestFrame($id, new Request($method, 'shell://app' . $path, ['x-multi' => ['a', 'b']], $body));
     }
 
     private function response(int $index): ResponseFrame

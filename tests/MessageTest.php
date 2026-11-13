@@ -87,10 +87,10 @@ final class MessageTest extends TestCase
 
     public function testRequestKeepsTheBosonPositionalSignature(): void
     {
-        $request = new Request('POST', 'boson://app/api/drafts/3', ['Content-Type' => 'application/json'], '{"a":1}');
+        $request = new Request('POST', 'shell://app/api/drafts/3', ['Content-Type' => 'application/json'], '{"a":1}');
 
         self::assertSame('POST', $request->method);
-        self::assertSame('boson://app/api/drafts/3', $request->url);
+        self::assertSame('shell://app/api/drafts/3', $request->url);
         self::assertSame('{"a":1}', $request->body);
         self::assertSame('application/json', $request->header('content-type'));
         self::assertSame('/api/drafts/3', $request->path());
@@ -98,17 +98,17 @@ final class MessageTest extends TestCase
 
     public function testRequestPathIsVerbatimAndNeverEmpty(): void
     {
-        self::assertSame('/', (new Request('GET', 'boson://app'))->path());
-        self::assertSame('/', (new Request('GET', 'boson://app/'))->path());
-        self::assertSame('/api/help/page/%CE%B5', (new Request('GET', 'boson://app/api/help/page/%CE%B5?x=1'))->path());
-        self::assertSame('/api/help/page/Ελληνικά', (new Request('GET', 'boson://app/api/help/page/Ελληνικά'))->path());
-        self::assertSame('patch', (new Request('patch', 'boson://app/'))->method);
+        self::assertSame('/', (new Request('GET', 'shell://app'))->path());
+        self::assertSame('/', (new Request('GET', 'shell://app/'))->path());
+        self::assertSame('/api/help/page/%CE%B5', (new Request('GET', 'shell://app/api/help/page/%CE%B5?x=1'))->path());
+        self::assertSame('/api/help/page/Ελληνικά', (new Request('GET', 'shell://app/api/help/page/Ελληνικά'))->path());
+        self::assertSame('patch', (new Request('patch', 'shell://app/'))->method);
     }
 
     /** Same semantics as Boson's Query::get(): parse_str() decoding, first element of an array. */
     public function testQueryParametersAreDecodedLikeParseStr(): void
     {
-        $request = new Request('GET', 'boson://app/api/sites/1/media?path=a%20b%2Fc&x=%E2%82%AC+%25&list[]=first&list[]=second&empty=');
+        $request = new Request('GET', 'shell://app/api/sites/1/media?path=a%20b%2Fc&x=%E2%82%AC+%25&list[]=first&list[]=second&empty=');
 
         self::assertSame('a b/c', $request->query('path'));
         self::assertSame('€ %', $request->query('x'));
@@ -117,8 +117,8 @@ final class MessageTest extends TestCase
         self::assertNull($request->query('absent'));
         self::assertSame('default', $request->query('absent', 'default'));
         self::assertSame('path=a%20b%2Fc&x=%E2%82%AC+%25&list[]=first&list[]=second&empty=', $request->queryString());
-        self::assertSame('', (new Request('GET', 'boson://app/'))->queryString());
-        self::assertSame([], (new Request('GET', 'boson://app/'))->queryParams());
+        self::assertSame('', (new Request('GET', 'shell://app/'))->queryString());
+        self::assertSame([], (new Request('GET', 'shell://app/'))->queryParams());
     }
 
     public function testResponseKeepsTheBosonPositionalSignature(): void
